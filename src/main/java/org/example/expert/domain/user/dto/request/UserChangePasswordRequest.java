@@ -4,14 +4,16 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.expert.domain.common.validation.ValidPassword;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserChangePasswordRequest {
 
-    @NotBlank
+    @NotBlank(message = "Enter the current password")
     private String oldPassword;
-    @NotBlank
+
+    @ValidPassword
     private String newPassword;
 }
