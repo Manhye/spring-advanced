@@ -15,9 +15,7 @@ import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -36,10 +34,10 @@ public class ManagerService {
     ) {
 
         User user = getUserFromAuth(authUser);
-        Todo todo = getTodoById(todoId);
+        Todo todo = getTodoByIdOrElseThrow(todoId);
         validateTodoOwner(todo, user);
 
-        User managerUser = getUserById(managerSaveRequest.getManagerUserId());
+        User managerUser = getUserByIdOrElseThrow(managerSaveRequest.getManagerUserId());
         validateNotSelfAssign(user, managerUser);
 
         Manager savedManagerUser = managerRepository.save(new Manager(managerUser, todo));
@@ -52,7 +50,7 @@ public class ManagerService {
 
     @Transactional(readOnly = true)
     public List<ManagerResponse> getManagers(long todoId) {
-        Todo todo = getTodoById(todoId);
+        Todo todo = getTodoByIdOrElseThrow(todoId);
 
         return managerRepository.findByTodoIdWithUser(todo.getId())
                 .stream()
@@ -68,11 +66,11 @@ public class ManagerService {
 
     @Transactional
     public void deleteManager(long userId, long todoId, long managerId) {
-        User user = getUserById(userId);
-        Todo todo = getTodoById(todoId);
+        User user = getUserByIdOrElseThrow(userId);
+        Todo todo = getTodoByIdOrElseThrow(todoId);
         validateTodoOwner(todo,user);
 
-        Manager manager = getManagerById(managerId);
+        Manager manager = getManagerByIdOrElseThrow(managerId);
         validateManagerBelongsToTodo(manager, todo);
 
         managerRepository.delete(manager);
@@ -83,30 +81,30 @@ public class ManagerService {
         return User.fromAuthUser(authUser);
     }
 
-    private User getUserById(long userId) {
+    private User getUserByIdOrElseThrow(long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidRequestException("User not found"));
     }
 
-    private Todo getTodoById(long todoId) {
+    private Todo getTodoByIdOrElseThrow(long todoId) {
         return todoRepository.findById(todoId)
                 .orElseThrow(() -> new InvalidRequestException("Todo not found"));
     }
 
-    private Manager getManagerById(long managerId) {
+    private Manager getManagerByIdOrElseThrow(long managerId) {
         return managerRepository.findById(managerId)
                 .orElseThrow(() -> new InvalidRequestException("Manager not found"));
     }
 
     private void validateTodoOwner(Todo todo, User user) {
-        if (todo.getUser() == null || !Objects.equals(todo.getUser().getId(), user.getId())) {
-            throw new InvalidRequestException("Not the owner of Todo.");
+        if (!Objects.equals(todo.getUser().getId(), user.getId())) {
+            throw new InvalidRequestException("Not the Owner of Todo");
         }
     }
 
     private void validateNotSelfAssign(User user, User managerUser) {
         if (Objects.equals(user.getId(), managerUser.getId())) {
-            throw new InvalidRequestException("Can't assign self owner.");
+            throw new InvalidRequestException("Can't assign self owner");
         }
     }
 
